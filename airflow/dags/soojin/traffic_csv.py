@@ -38,7 +38,7 @@ def fetch_and_process(**context):
     res = requests.get(url)
     if res.status_code != 200:
         raise Exception(f"ITS API 요청 실패, 상태코드: {res.status_code}")
-
+    
     data = res.json()
     events = data.get("body", {}).get("items", [])
 
@@ -65,7 +65,7 @@ def upload_to_s3_partitioned(**context):
         filename=file_path,
         key=s3_key,
         bucket_name="traffic-s3-team4",
-        replace=True,  # overwrite
+        replace=True  # overwrite
     )
 
 
@@ -80,25 +80,25 @@ with DAG(
     2. S3 업로드
     3. Snowflake 테이블 생성/적재
     4. dbt Run & Test -> Superset 시각화
-    """,
+    """
 ) as dag:
 
     t1_fetch = PythonOperator(
         task_id="fetch_and_process",
         python_callable=fetch_and_process,
-        doc_md="**ITS API 데이터 수집 및 DataFrame 전처리**",
+        doc_md="**ITS API 데이터 수집 및 DataFrame 전처리**"
     )
 
     t2_s3 = PythonOperator(
         task_id="upload_to_s3",
         python_callable=upload_to_s3_partitioned,
-        doc_md="**CSV 파일을 S3에 업로드**",
+        doc_md="**CSV 파일을 S3에 업로드**"
     )
 
     t3_create_table = SnowflakeOperator(
-        task_id="create_snowflake_table",
-        snowflake_conn_id="sf_conn",
-        sql="""
+    task_id="create_snowflake_table",
+    snowflake_conn_id="sf_conn",
+    sql="""
         CREATE TABLE IF NOT EXISTS TRAFFIC_DB.RAW_DATA.TRAFFIC_EVENT_FOLDER_PARTITIONING_SOOJIN (
             type VARCHAR,                -- 고속도로, 일반도로 등
             eventType VARCHAR,           -- 공사, 기타돌발 등
@@ -116,7 +116,7 @@ with DAG(
             endDate VARCHAR              -- YYYYMMDDHHMMSS
         );
     """,
-        doc_md="**Snowflake 테이블 생성: 컬럼 정의, 원본 보존**",
+    doc_md="**Snowflake 테이블 생성: 컬럼 정의, 원본 보존**"
     )
 
     t4_copy_into = SnowflakeOperator(
@@ -140,13 +140,14 @@ with DAG(
             -- ON_ERROR='ABORT_STATEMENT';
             ON_ERROR='CONTINUE';
         """,
-        doc_md="**S3 CSV → Snowflake 테이블 COPY, 원본 보존**",
+        doc_md="**S3 CSV → Snowflake 테이블 COPY, 원본 보존**"
     )
 
     t4_dbt_run = BashOperator(
         task_id="dbt_run",
         bash_command="cd /opt/dbt/my_project && dbt run && dbt test",
-        doc_md="**dbt를 이용해 Transform Table 검증 및 문서화 수행**",
+        doc_md="**dbt를 이용해 Transform Table 검증 및 문서화 수행**"
     )
+
 
     t1_fetch >> t2_s3 >> t3_create_table >> t4_copy_into >> t4_dbt_run
