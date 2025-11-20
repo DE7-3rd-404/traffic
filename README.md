@@ -84,10 +84,10 @@ traffic-404/
 │       │
 │       ├── models-soojin/                    # 수진님 dbt 모델 집합
 │       │   ├── marts/
-│       │   │   ├── daily_event_count.sql
-│       │   │   ├── daily_event_count.yml
-│       │   │   ├── hourly_event_heatmap.sql
-│       │   │   └── weekday_event_count.sql
+│       │       ├── daily_event_count.sql
+│       │       ├── daily_event_count.yml
+│       │       ├── hourly_event_heatmap.sql
+│       │       └── weekday_event_count.sql
 │       │
 │       └── models-wonbae/                    # 원배님 dbt 모델 집합
 │           ├── avg-duration-min.sql
